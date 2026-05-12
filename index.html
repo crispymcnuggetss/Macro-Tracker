@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Macro Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body { margin: 0; padding: 0; background: #f7f1e6; display: flex; justify-content: center; }
+    #root { width: 100%; max-width: 480px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore-compat.js"></script>
+
+  <!-- React & Babel -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
+    // ==================== MY FIREBASE CONFIG ====================
+    const firebaseConfig = {
+      apiKey: "AIzaSyCrPWskiaWfc8klDmiJZnSmDajEXHllCaA",
+      authDomain: "fsmf-1291f.firebaseapp.com",
+      projectId: "fsmf-1291f",
+      storageBucket: "fsmf-1291f.firebasestorage.app",
+      messagingSenderId: "769681479170",
+      appId: "1:769681479170:web:dd4706b354d609fcecb91b"
+    };
+    // ==============================================================
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // ---------- Inline SVG Icons (replaces lucide-react) ----------
+    const Icons = {
+      Plus: p => <svg width={p.size||24} height={p.size||24} viewBox="0 0 24 24" fill="none" stroke={p.color||'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+      X: p => <svg width={p.size||24} height={p.size||24} viewBox="0 0 24 24" fill="none" stroke={p.color||'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+      Trash2: p => <svg width={p.size||24} height={p.size||24} viewBox="0 0 24 24" fill="none" stroke={p.color||'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>,
+      Edit2: p => <svg width={p.size||24} height={p.size||24} viewBox="0 0 24 24" fill="none" stroke={p.color||'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>,
+      ChevronRight: p => <svg width={p.size||24} height={p.size||24} viewBox="0 0 24 24" fill="none" stroke={p.color||'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>,
+      ChevronDown: p => <svg width={p.size||24} height={p.size||24} viewBox="0 0 24 24" fill="none" stroke={p.color||'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>,
+      Target: p => <svg width={p.size||24} height={p.size||24} viewBox="0 0 24 24" fill="none" stroke={p.color||'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+      Library: p => <svg width={p.size||24} height={p.size||24} viewBox="0 0 24 24" fill="none" stroke={p.color||'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="12" y1="6" x2="12" y2="14"/><line x1="8" y1="10" x2="16" y2="10"/></svg>,
+      Calendar: p => <svg width={p.size||24} height={p.size||24} viewBox="0 0 24 24" fill="none" stroke={p.color||'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+      Search: p => <svg width={p.size||24} height={p.size||24} viewBox="0 0 24 24" fill="none" stroke={p.color||'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+      Settings: p => <svg width={p.size||24} height={p.size||24} viewBox="0 0 24 24" fill="none" stroke={p.color||'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
+      Check: p => <svg width={p.size||24} height={p.size||24} viewBox="0 0 24 24" fill="none" stroke={p.color||'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+    };
+
+    // ---------- Original data & helpers (unchanged) ----------
+    const NUTRIENT_FIELDS = [
+      { key: 'cal', label: 'Calories', unit: '', required: true },
+      { key: 'protein', label: 'Protein', unit: 'g', required: true },
+      { key: 'carbs', label: 'Carbs', unit: 'g', required: true },
+      { key: 'fat', label: 'Fat', unit: 'g', required: true },
+      { key: 'fiber', label: 'Fiber', unit: 'g', required: false },
+      { key: 'sugar', label: 'Sugar', unit: 'g', required: false },
+      { key: 'satFat', label: 'Sat. Fat', unit: 'g', required: false },
+      { key: 'sodium', label: 'Sodium', unit: 'mg', required: false },
+      { key: 'cholesterol', label: 'Cholesterol', unit: 'mg', required: false },
+      { key: 'potassium', label: 'Potassium', unit: 'mg', required: false },
+    ];
+
+    const SEED_LIBRARY = [
+      { id: 's1', name: 'Chicken breast, cooked', servingDesc: '100g', servingG: 100, cal: 165, protein: 31, carbs: 0, fat: 3.6, fiber: 0, sugar: 0, satFat: 1, sodium: 74, cholesterol: 85, potassium: 256 },
+      { id: 's2', name: 'Chicken thigh, cooked', servingDesc: '100g', servingG: 100, cal: 209, protein: 26, carbs: 0, fat: 10.9, fiber: 0, sugar: 0, satFat: 3, sodium: 88, cholesterol: 95, potassium: 230 },
+      { id: 's3', name: 'Ground beef 90/10, cooked', servingDesc: '100g', servingG: 100, cal: 217, protein: 26, carbs: 0, fat: 11.7, fiber: 0, sugar: 0, satFat: 4.6, sodium: 72, cholesterol: 88, potassium: 318 },
+      { id: 's4', name: 'Salmon, cooked', servingDesc: '100g', servingG: 100, cal: 206, protein: 22, carbs: 0, fat: 12, fiber: 0, sugar: 0, satFat: 3, sodium: 61, cholesterol: 63, potassium: 384 },
+      { id: 's5', name: 'Tuna, canned in water', servingDesc: '100g', servingG: 100, cal: 116, protein: 26, carbs: 0, fat: 0.8, fiber: 0, sugar: 0, satFat: 0.2, sodium: 247, cholesterol: 30, potassium: 237 },
+      { id: 's6', name: 'Shrimp, cooked', servingDesc: '100g', servingG: 100, cal: 99, protein: 24, carbs: 0.2, fat: 0.3, fiber: 0, sugar: 0, satFat: 0.1, sodium: 111, cholesterol: 189, potassium: 259 },
+      { id: 's7', name: 'Egg, large', servingDesc: '1 egg (50g)', servingG: 50, cal: 72, protein: 6.3, carbs: 0.4, fat: 4.8, fiber: 0, sugar: 0.2, satFat: 1.6, sodium: 71, cholesterol: 186, potassium: 69 },
+      { id: 's8', name: 'Greek yogurt, plain nonfat', servingDesc: '100g', servingG: 100, cal: 59, protein: 10, carbs: 3.6, fat: 0.4, fiber: 0, sugar: 3.2, satFat: 0.1, sodium: 36, cholesterol: 5, potassium: 141 },
+      { id: 's9', name: 'Cottage cheese, 2%', servingDesc: '100g', servingG: 100, cal: 84, protein: 11, carbs: 4.3, fat: 2.3, fiber: 0, sugar: 4.1, satFat: 1, sodium: 321, cholesterol: 12, potassium: 125 },
+      { id: 's10', name: 'Tofu, firm', servingDesc: '100g', servingG: 100, cal: 144, protein: 17, carbs: 2.8, fat: 8.7, fiber: 2.3, sugar: 0.6, satFat: 1.3, sodium: 14, cholesterol: 0, potassium: 237 },
+      { id: 's11', name: 'Tempeh', servingDesc: '100g', servingG: 100, cal: 192, protein: 20, carbs: 7.6, fat: 11, fiber: 0, sugar: 0, satFat: 2.2, sodium: 9, cholesterol: 0, potassium: 412 },
+      { id: 's12', name: 'Black beans, cooked', servingDesc: '100g', servingG: 100, cal: 132, protein: 8.9,carbs: 23.7, fat: 0.5, fiber: 8.7, sugar: 0.3, satFat: 0.1, sodium: 1, cholesterol: 0, potassium: 355 },
+      { id: 's13', name: 'Lentils, cooked', servingDesc: '100g', servingG: 100, cal: 116, protein: 9, carbs: 20, fat: 0.4, fiber: 7.9, sugar: 1.8, satFat: 0.1, sodium: 2, cholesterol: 0, potassium: 369 },
+      { id: 's14', name: 'Whey protein powder', servingDesc: '1 scoop (30g)', servingG: 30, cal: 120, protein: 24, carbs: 3, fat: 1.5, fiber: 1, sugar: 2, satFat: 1, sodium: 50, cholesterol: 30, potassium: 160 },
+      { id: 's15', name: 'White rice, cooked', servingDesc: '100g', servingG: 100, cal: 130, protein: 2.7,carbs: 28, fat: 0.3, fiber: 0.4, sugar: 0.1, satFat: 0.1, sodium: 1, cholesterol: 0, potassium: 35 },
+      { id: 's16', name: 'Brown rice, cooked', servingDesc: '100g', servingG: 100, cal: 123, protein: 2.7,carbs: 26, fat: 1, fiber: 1.6, sugar: 0.2, satFat: 0.2, sodium: 4, cholesterol: 0, potassium: 86 },
+      { id: 's17', name: 'Pasta, cooked', servingDesc: '100g', servingG: 100, cal: 131, protein: 5, carbs: 25, fat: 1.1, fiber: 1.8, sugar: 0.6, satFat: 0.2, sodium: 6, cholesterol: 0, potassium: 44 },
+      { id: 's18', name: 'Whole wheat bread', servingDesc: '1 slice (28g)', servingG: 28, cal: 69, protein: 3.6, carbs: 12, fat: 1, fiber: 1.9, sugar: 1.6, satFat: 0.2, sodium: 132, cholesterol: 0, potassium: 70 },
+      { id: 's19', name: 'White bread', servingDesc: '1 slice (28g)', servingG: 28, cal: 75, protein: 2.6, carbs: 14, fat: 1, fiber: 0.8, sugar: 1.4, satFat: 0.2, sodium: 142, cholesterol: 0, potassium: 33 },
+      { id: 's20', name: 'Oats, dry', servingDesc: '40g', servingG: 40, cal: 150, protein: 5.4,carbs: 27, fat: 2.6, fiber: 4, sugar: 0.4, satFat: 0.5, sodium: 0, cholesterol: 0, potassium: 167 },
+      { id: 's21', name: 'Quinoa, cooked', servingDesc: '100g', servingG: 100, cal: 120, protein: 4.4,carbs: 21, fat: 1.9, fiber: 2.8, sugar: 0.9, satFat: 0.2, sodium: 7, cholesterol: 0, potassium: 172 },
+      { id: 's22', name: 'Sweet potato, baked', servingDesc: '100g', servingG: 100, cal: 90, protein: 2, carbs: 21, fat: 0.2, fiber: 3.3, sugar: 6.5, satFat: 0, sodium: 36, cholesterol: 0, potassium: 475 },
+      { id: 's23', name: 'Potato, baked', servingDesc: '100g', servingG: 100, cal: 93, protein: 2.5,carbs: 21, fat: 0.1, fiber: 2.2, sugar: 1.2, satFat: 0, sodium: 10, cholesterol: 0, potassium: 535 },
+      { id: 's24', name: 'Flour tortilla, 8-inch', servingDesc: '1 tortilla (49g)', servingG: 49, cal: 144, protein: 3.8, carbs: 23, fat: 3.7, fiber: 1.5, sugar: 1.3, satFat: 1, sodium: 339, cholesterol: 0, potassium: 51 },
+      { id: 's25', name: 'Broccoli, cooked', servingDesc: '100g', servingG: 100, cal: 35, protein: 2.4,carbs: 7.2, fat: 0.4, fiber: 3.3, sugar: 1.4, satFat: 0, sodium: 41, cholesterol: 0, potassium: 293 },
+      { id: 's26', name: 'Spinach, raw', servingDesc: '100g', servingG: 100, cal: 23, protein: 2.9,carbs: 3.6, fat: 0.4, fiber: 2.2, sugar: 0.4, satFat: 0.1, sodium: 79, cholesterol: 0, potassium: 558 },
+      { id: 's27', name: 'Kale, raw', servingDesc: '100g', servingG: 100, cal: 35, protein: 2.9,carbs: 4.4, fat: 1.5, fiber: 4.1, sugar: 0.8, satFat: 0.2, sodium: 53, cholesterol: 0, potassium: 348 },
+      { id: 's28', name: 'Carrots, raw', servingDesc: '100g', servingG: 100, cal: 41, protein: 0.9,carbs: 9.6, fat: 0.2, fiber: 2.8, sugar: 4.7, satFat: 0, sodium: 69, cholesterol: 0, potassium: 320 },
+      { id: 's29', name: 'Bell pepper, red', servingDesc: '100g', servingG: 100, cal: 31, protein: 1, carbs: 6, fat: 0.3, fiber: 2.1, sugar: 4.2, satFat: 0, sodium: 4, cholesterol: 0, potassium: 211 },
+      { id: 's30', name: 'Tomato, raw', servingDesc: '100g', servingG: 100, cal: 18, protein: 0.9,carbs: 3.9, fat: 0.2, fiber: 1.2, sugar: 2.6, satFat: 0, sodium: 5, cholesterol: 0, potassium: 237 },
+      { id: 's31', name: 'Cucumber', servingDesc: '100g', servingG: 100, cal: 15, protein: 0.7,carbs: 3.6, fat: 0.1, fiber: 0.5, sugar: 1.7, satFat: 0, sodium: 2, cholesterol: 0, potassium: 147 },
+      { id: 's32', name: 'Avocado', servingDesc: '100g', servingG: 100, cal: 160, protein: 2, carbs: 8.5, fat: 14.7, fiber: 6.7, sugar: 0.7, satFat: 2.1, sodium: 7, cholesterol: 0, potassium: 485 },
+      { id: 's33', name: 'Onion, raw', servingDesc: '100g', servingG: 100, cal: 40, protein: 1.1,carbs: 9.3, fat: 0.1, fiber: 1.7, sugar: 4.2, satFat: 0, sodium: 4, cholesterol: 0, potassium: 146 },
+      { id: 's34', name: 'Mushrooms, white', servingDesc: '100g', servingG: 100, cal: 22, protein: 3.1,carbs: 3.3, fat: 0.3, fiber: 1, sugar: 2, satFat: 0, sodium: 5, cholesterol: 0, potassium: 318 },
+      { id: 's35', name: 'Apple', servingDesc: '100g', servingG: 100, cal: 52, protein: 0.3,carbs: 14, fat: 0.2, fiber: 2.4, sugar: 10, satFat: 0, sodium: 1, cholesterol: 0, potassium: 107 },
+      { id: 's36', name: 'Banana', servingDesc: '100g', servingG: 100, cal: 89, protein: 1.1,carbs: 23, fat: 0.3, fiber: 2.6, sugar: 12, satFat: 0.1, sodium: 1, cholesterol: 0, potassium: 358 },
+      { id: 's37', name: 'Strawberries', servingDesc: '100g', servingG: 100, cal: 32, protein: 0.7,carbs: 7.7, fat: 0.3, fiber: 2, sugar: 4.9, satFat: 0, sodium: 1, cholesterol: 0, potassium: 153 },
+      { id: 's38', name: 'Blueberries', servingDesc: '100g', servingG: 100, cal: 57, protein: 0.7,carbs: 14, fat: 0.3, fiber: 2.4, sugar: 10, satFat: 0, sodium: 1, cholesterol: 0, potassium: 77 },
+      { id: 's39', name: 'Orange', servingDesc: '100g', servingG: 100, cal: 47, protein: 0.9,carbs: 12, fat: 0.1, fiber: 2.4, sugar: 9.4, satFat: 0, sodium: 0, cholesterol: 0, potassium: 181 },
+      { id: 's40', name: 'Grapes', servingDesc: '100g', servingG: 100, cal: 69, protein: 0.7,carbs: 18, fat: 0.2, fiber: 0.9, sugar: 16, satFat: 0.1, sodium: 2, cholesterol: 0, potassium: 191 },
+      { id: 's41', name: 'Mango', servingDesc: '100g', servingG: 100, cal: 60, protein: 0.8,carbs: 15, fat: 0.4, fiber: 1.6, sugar: 14, satFat: 0.1, sodium: 1, cholesterol: 0, potassium: 168 },
+      { id: 's42', name: 'Whole milk', servingDesc: '240ml (1 cup)', servingG: 244, cal: 149, protein: 7.7, carbs: 12, fat: 8, fiber: 0, sugar: 12, satFat: 4.6, sodium: 105, cholesterol: 24, potassium: 322 },
+      { id: 's43', name: '2% milk', servingDesc: '240ml (1 cup)', servingG: 244, cal: 122, protein: 8.1, carbs: 12, fat: 4.8, fiber: 0, sugar: 12, satFat: 3.1, sodium: 115, cholesterol: 20, potassium: 342 },
+      { id: 's44', name: 'Cheddar cheese', servingDesc: '28g (1 oz)', servingG: 28, cal: 113, protein: 7, carbs: 0.4, fat: 9.3, fiber: 0, sugar: 0.1, satFat: 5.9, sodium: 197, cholesterol: 28, potassium: 22 },
+      { id: 's45', name: 'Mozzarella, part-skim', servingDesc: '28g (1 oz)', servingG: 28, cal: 72, protein: 6.9, carbs: 0.8, fat: 4.5, fiber: 0, sugar: 0.3, satFat: 2.9, sodium: 175, cholesterol: 18, potassium: 24 },
+      { id: 's46', name: 'Butter', servingDesc: '1 tbsp (14g)', servingG: 14, cal: 102, protein: 0.1, carbs: 0, fat: 11.5, fiber: 0, sugar: 0, satFat: 7.3, sodium: 91, cholesterol: 31, potassium: 3 },
+      { id: 's47', name: 'Olive oil', servingDesc: '1 tbsp (14g)', servingG: 14, cal: 119, protein: 0, carbs: 0, fat: 13.5, fiber: 0, sugar: 0, satFat: 1.9, sodium: 0, cholesterol: 0, potassium: 0 },
+      { id: 's48', name: 'Almonds', servingDesc: '28g (1 oz)', servingG: 28, cal: 164, protein: 6, carbs: 6.1, fat: 14.2, fiber: 3.5, sugar: 1.2, satFat: 1.1, sodium: 0, cholesterol: 0, potassium: 208 },
+      { id: 's49', name: 'Peanut butter', servingDesc: '2 tbsp (32g)', servingG: 32, cal: 188, protein: 7.7, carbs: 6.9, fat: 16, fiber: 1.6, sugar: 3.4, satFat: 3.3, sodium: 156, cholesterol: 0, potassium: 208 },
+      { id: 's50', name: 'Walnuts', servingDesc: '28g (1 oz)', servingG: 28, cal: 185, protein: 4.3, carbs: 3.9, fat: 18.5, fiber: 1.9, sugar: 0.7, satFat: 1.7, sodium: 1, cholesterol: 0, potassium: 125 },
+      { id: 's51', name: 'Chia seeds', servingDesc: '28g (1 oz)', servingG: 28, cal: 137, protein: 4.4, carbs: 12, fat: 8.6, fiber: 9.8, sugar: 0, satFat: 0.9, sodium: 5, cholesterol: 0, potassium: 115 },
+      { id: 's52', name: 'Cheese pizza, regular slice', servingDesc: '1 slice (107g)', servingG: 107, cal: 285, protein: 12, carbs: 36, fat: 10, fiber: 2.5, sugar: 3.8, satFat: 4.8, sodium: 640, cholesterol: 18, potassium: 184 },
+      { id: 's53', name: 'Stonyfield vanilla Greek yogurt', servingDesc: '170g cup', servingG: 170, cal: 170, protein: 14, carbs: 16, fat: 6, fiber: 0, sugar: 13, satFat: 4, sodium: 60, cholesterol: 20, potassium: 200 },
+      { id: 's54', name: 'Honey', servingDesc: '1 tbsp (21g)', servingG: 21, cal: 64, protein: 0.1, carbs: 17, fat: 0, fiber: 0, sugar: 17, satFat: 0, sodium: 1, cholesterol: 0, potassium: 11 },
+    ];
+
+    const ACTIVITY_LEVELS = [
+      { key: 'sedentary', label: 'Sedentary', desc: 'Little to no exercise', mult: 1.2 },
+      { key: 'light', label: 'Light', desc: '1–3 days/week exercise', mult: 1.375 },
+      { key: 'moderate', label: 'Moderate', desc: '3–5 days/week exercise', mult: 1.55 },
+      { key: 'very', label: 'Very active', desc: '6–7 days/week or physical job', mult: 1.725 },
+    ];
+
+    const CUT_PACES = [
+      { key: 'slow', label: 'Slow', deficit: 250, perWeekLb: 0.5, desc: 'Easier, more sustainable' },
+      { key: 'normal', label: 'Normal', deficit: 500, perWeekLb: 1, desc: 'Standard recommendation' },
+      { key: 'fast', label: 'Fast', deficit: 750, perWeekLb: 1.5, desc: 'Aggressive, harder to stick to' },
+    ];
+    const BULK_PACES = [
+      { key: 'slow', label: 'Slow', surplus: 200, perWeekLb: 0.4, desc: 'Minimize fat gain' },
+      { key: 'normal', label: 'Normal', surplus: 350, perWeekLb: 0.7, desc: 'Standard lean bulk' },
+      { key: 'fast', label: 'Fast', surplus: 500, perWeekLb: 1, desc: 'Faster gains, more fat' },
+    ];
+
+    const parseOpt = v => { if (v === '' || v == null) return null; const n = parseFloat(v); return isNaN(n) ? null : n; };
+    const scale = (food, mult) => { const out = {}; for (const f of NUTRIENT_FIELDS) { const v = food[f.key]; out[f.key] = (v == null) ? null : Math.round(v * mult * 10) / 10; } return out; };
+    const sumKey = (entries, key) => { let total = 0; for (const e of entries) { const v = e.nutrients?.[key]; if (v != null) total += v; } return Math.round(total * 10) / 10; };
+    const fmt = (val, suffix = '') => val == null ? '—' : `${val}${suffix}`;
+    const fmtInt = val => val == null ? '—' : Math.round(val);
+    const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+    const lbToKg = lb => lb * 0.453592;
+    const kgToLb = kg => kg / 0.453592;
+    const inToCm = i => i * 2.54;
+    const cmToIn = c => c / 2.54;
+    const calcBMR = profile => {
+      const { sex, age, heightCm, weightKg } = profile;
+      if (!sex || !age || !heightCm || !weightKg) return null;
+      const base = 10 * weightKg + 6.25 * heightCm - 5 * age;
+      return sex === 'male' ? base + 5 : base - 161;
+    };
+    const calcTDEE = (bmr, activity) => {
+      if (!bmr) return null;
+      const lvl = ACTIVITY_LEVELS.find(a => a.key === activity);
+      return Math.round(bmr * (lvl?.mult || 1.2));
+    };
+
+    // ---------- Styles ----------
+    const css = `
+:root {
+  --cream: #f7f1e6; --cream-2: #f0e7d4; --ink: #2a2520; --ink-soft: #5a5048; --ink-mute: #8a7f73;
+  --green: #4a6b3a; --green-soft: #7a9968; --terra: #c66b3d; --terra-soft: #e89571; --line: #d8ccb6; --card: #fffaf0;
+}
+.mt-root { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; max-width: 480px; margin: 0 auto; padding-bottom: 90px; position: relative; }
+.mt-header { padding: 24px 20px 8px; }
+.mt-title { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 600; letter-spacing: -0.5px; margin: 0; }
+.mt-sub { font-size: 13px; color: var(--ink-mute); margin: 2px 0 0; }
+.mt-ring-wrap { display: flex; justify-content: center; padding: 16px 20px 24px; }
+.mt-ring-box { background: var(--card); border-radius: 24px; padding: 24px; width: 100%; box-shadow: 0 1px 0 var(--line); }
+.mt-ring-row { display: flex; align-items: center; gap: 20px; }
+.mt-ring-svg { flex-shrink: 0; }
+.mt-ring-info { flex: 1; }
+.mt-ring-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--ink-mute); margin-bottom: 4px; }
+.mt-ring-val { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 600; line-height: 1; }
+.mt-ring-goal { font-size: 14px; color: var(--ink-soft); margin-top: 2px; }
+.mt-ring-bar-row { display: flex; gap: 12px; margin-top: 16px; }
+.mt-ring-bar { flex: 1; }
+.mt-bar-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--ink-mute); margin-bottom: 4px; }
+.mt-bar-val { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.mt-bar-track { height: 4px; background: var(--cream-2); border-radius: 2px; overflow: hidden; }
+.mt-bar-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
+.mt-bar-protein .mt-bar-fill { background: var(--green); }
+.mt-bar-carbs   .mt-bar-fill { background: var(--terra); }
+.mt-bar-fat     .mt-bar-fill { background: #b89456; }
+.mt-section { padding: 0 20px; }
+.mt-section-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+.mt-section-title { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; margin: 0; }
+.mt-section-count { font-size: 12px; color: var(--ink-mute); }
+.mt-empty { text-align: center; padding: 40px 20px; color: var(--ink-mute); font-size: 14px; font-style: italic; }
+.mt-entry { background: var(--card); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; }
+.mt-entry-head { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.mt-entry-info { flex: 1; min-width: 0; }
+.mt-entry-name { font-size: 14px; font-weight: 500; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mt-entry-meta { font-size: 11px; color: var(--ink-mute); margin-top: 2px; }
+.mt-entry-cal { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; flex-shrink: 0; }
+.mt-entry-x { background: none; border: none; padding: 4px; cursor: pointer; color: var(--ink-mute); flex-shrink: 0; }
+.mt-entry-x:hover { color: var(--terra); }
+.mt-entry-expand { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; }
+.mt-entry-stat { font-size: 11px; display: flex; justify-content: space-between; }
+.mt-entry-stat-l { color: var(--ink-mute); }
+.mt-entry-stat-v { color: var(--ink); font-weight: 500; }
+.mt-add-fab { position: fixed; bottom: 100px; right: calc(50% - 220px); max-width: 200px; background: var(--ink); color: var(--cream); border: none; border-radius: 28px; padding: 14px 20px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 6px 16px rgba(42,37,32,0.25); }
+.mt-add-fab:active { transform: scale(0.97); }
+@media (max-width: 520px) { .mt-add-fab { right: 20px; } }
+.mt-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: var(--card); border-top: 1px solid var(--line); display: flex; padding: 8px 0 16px; }
+.mt-nav-btn { flex: 1; background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; color: var(--ink-mute); cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 11px; }
+.mt-nav-btn.active { color: var(--ink); }
+.mt-sheet-bg { position: fixed; inset: 0; background: rgba(42,37,32,0.4); z-index: 20; display: flex; align-items: flex-end; justify-content: center; }
+.mt-sheet { background: var(--cream); width: 100%; max-width: 480px; max-height: 92vh; overflow-y: auto; border-radius: 24px 24px 0 0; padding: 20px; position: relative; }
+.mt-sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.mt-sheet-title { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600; margin: 0; }
+.mt-sheet-x { background: none; border: none; padding: 4px; cursor: pointer; color: var(--ink); }
+.mt-field { margin-bottom: 12px; }
+.mt-field-label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--ink-mute); margin-bottom: 6px; }
+.mt-field-hint { font-size: 11px; color: var(--ink-mute); margin-top: 4px; font-style: italic; }
+.mt-input, .mt-select { width: 100%; box-sizing: border-box; padding: 12px 14px; font-family: 'DM Sans', sans-serif; font-size: 15px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); color: var(--ink); }
+.mt-input:focus, .mt-select:focus { outline: none; border-color: var(--green); }
+.mt-input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mt-search { position: relative; margin-bottom: 14px; }
+.mt-search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--ink-mute); }
+.mt-search-input { width: 100%; box-sizing: border-box; padding: 12px 14px 12px 42px; font-family: 'DM Sans', sans-serif; font-size: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); color: var(--ink); }
+.mt-search-input:focus { outline: none; border-color: var(--green); }
+.mt-btn-primary { width: 100%; padding: 14px; background: var(--green); color: var(--cream); border: none; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; }
+.mt-btn-primary:active { transform: scale(0.98); }
+.mt-btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+.mt-btn-secondary { width: 100%; padding: 12px; background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 8px; }
+.mt-btn-ghost { background: none; border: none; color: var(--green); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; padding: 8px 0; display: inline-flex; align-items: center; gap: 4px; }
+.mt-lib-item { background: var(--card); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+.mt-lib-info { flex: 1; min-width: 0; cursor: pointer; }
+.mt-lib-name { font-size: 14px; font-weight: 500; margin: 0; }
+.mt-lib-meta { font-size: 11px; color: var(--ink-mute); margin-top: 2px; }
+.mt-lib-cal { font-family: 'Fraunces', serif; font-size: 14px; color: var(--ink-soft); font-weight: 500; }
+.mt-lib-edit { background: none; border: none; padding: 6px; cursor: pointer; color: var(--ink-mute); }
+.mt-goal-card { background: var(--card); border-radius: 16px; padding: 18px; margin-bottom: 12px; }
+.mt-goal-card-title { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+.mt-goal-stat { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; border-bottom: 1px dashed var(--line); }
+.mt-goal-stat:last-child { border-bottom: none; }
+.mt-goal-stat-l { color: var(--ink-soft); }
+.mt-goal-stat-v { font-weight: 600; }
+.mt-goal-callout { background: var(--cream-2); border-radius: 12px; padding: 12px 14px; margin: 12px 0; font-size: 13px; color: var(--ink-soft); }
+.mt-pace { background: var(--cream-2); border-radius: 14px; padding: 14px; margin-bottom: 10px; }
+.mt-pace-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.mt-pace-label { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; }
+.mt-pace-rate { font-size: 12px; color: var(--ink-mute); }
+.mt-pace-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; font-size: 13px; }
+.mt-pace-stat-l { color: var(--ink-mute); font-size: 11px; }
+.mt-pace-stat-v { font-weight: 600; font-family: 'Fraunces', serif; font-size: 16px; }
+.mt-pace-desc { font-size: 11px; color: var(--ink-mute); font-style: italic; margin-bottom: 8px; }
+.mt-pace-apply { background: var(--green); color: var(--cream); border: none; border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.mt-unit-toggle { display: inline-flex; background: var(--cream-2); border-radius: 8px; padding: 2px; margin-bottom: 10px; }
+.mt-unit-toggle button { background: none; border: none; padding: 6px 14px; font-size: 12px; font-family: 'DM Sans', sans-serif; border-radius: 6px; cursor: pointer; color: var(--ink-mute); font-weight: 500; }
+.mt-unit-toggle button.active { background: var(--card); color: var(--ink); }
+.mt-history-day { background: var(--card); border-radius: 14px; padding: 14px 16px; margin-bottom: 8px; }
+.mt-history-date { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; margin: 0 0 6px; }
+.mt-history-stats { display: flex; gap: 14px; font-size: 12px; color: var(--ink-soft); }
+.mt-notice { background: var(--cream-2); border-radius: 10px; padding: 10px 12px; font-size: 12px; color: var(--ink-soft); margin-bottom: 12px; line-height: 1.5; }
+.mt-logout-btn { background: none; border: 1px solid var(--line); color: var(--ink-soft); padding: 6px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; }
+`;
+
+    // ---------- Ring ----------
+    const Ring = ({ pct, size = 90 }) => {
+      const r = (size - 12) / 2;
+      const c = 2 * Math.PI * r;
+      const p = Math.min(pct, 1);
+      return (
+        <svg width={size} height={size} className="mt-ring-svg">
+          <circle cx={size/2} cy={size/2} r={r} stroke="var(--cream-2)" strokeWidth="8" fill="none" />
+          <circle cx={size/2} cy={size/2} r={r} stroke="var(--green)" strokeWidth="8" fill="none"
+            strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - p)}
+            transform={`rotate(-90 ${size/2} ${size/2})`} />
+        </svg>
+      );
+    };
+
+    // ---------- Login Screen ----------
+    const LoginScreen = ({ onLogin }) => {
+      const [email, setEmail] = React.useState('');
+      const [password, setPassword] = React.useState('');
+      const [error, setError] = React.useState('');
+      const [isSignup, setIsSignup] = React.useState(false);
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        try {
+          if (isSignup) {
+            await auth.createUserWithEmailAndPassword(email, password);
+          } else {
+            await auth.signInWithEmailAndPassword(email, password);
+          }
+        } catch (err) {
+          setError(err.message);
+        }
+      };
+
+      return (
+        <div style={{padding:40,background:'#f7f1e6',minHeight:'100vh'}}>
+          <h1 style={{fontFamily:'Fraunces,serif',fontSize:32,marginBottom:8}}>Macro Tracker</h1>
+          <p style={{color:'#8a7f73',marginTop:0}}>Sign in to sync your data across devices.</p>
+          <form onSubmit={handleSubmit} style={{marginTop:24}}>
+            <input type="email" placeholder="Email" required value={email} onChange={e=>setEmail(e.target.value)}
+              style={{width:'100%',padding:12,marginBottom:10,border:'1px solid #d8ccb6',borderRadius:12}} />
+            <input type="password" placeholder="Password (6+ chars)" required minLength="6" value={password} onChange={e=>setPassword(e.target.value)}
+              style={{width:'100%',padding:12,marginBottom:10,border:'1px solid #d8ccb6',borderRadius:12}} />
+            {error && <p style={{color:'#c66b3d',fontSize:13}}>{error}</p>}
+            <button type="submit" style={{width:'100%',padding:14,background:'#4a6b3a',color:'white',border:'none',borderRadius:12,fontWeight:600,fontSize:16,marginBottom:10}}>
+              {isSignup ? 'Sign Up' : 'Log In'}
+            </button>
+          </form>
+          <button onClick={()=>{setIsSignup(!isSignup);setError('')}} style={{background:'none',border:'none',color:'#4a6b3a',fontWeight:600,cursor:'pointer'}}>
+            {isSignup ? 'Already have an account? Log in' : 'Need an account? Sign up'}
+          </button>
+          <p style={{fontSize:12,color:'#8a7f73',marginTop:20}}>Free forever · No credit card</p>
+        </div>
+      );
+    };
+
+    // ---------- Main App (after login) ----------
+    const MainApp = ({ user, onLogout }) => {
+      const [tab, setTab] = React.useState('today');
+      const [foods, setFoods] = React.useState([]);
+      const [entries, setEntries] = React.useState([]);
+      const [goals, setGoals] = React.useState({ cal: 2000, protein: 150 });
+      const [profile, setProfile] = React.useState({ sex: 'male', age: 30, heightCm: 175, weightKg: 75, targetWeightKg: 75, activity: 'moderate', units: 'metric' });
+      const [loading, setLoading] = React.useState(true);
+      const [saveError, setSaveError] = React.useState(false);
+
+      const [expandedEntry, setExpandedEntry] = React.useState(null);
+      const [showAdd, setShowAdd] = React.useState(false);
+      const [showLibAdd, setShowLibAdd] = React.useState(false);
+      const [showServing, setShowServing] = React.useState(null);
+      const [editingFood, setEditingFood] = React.useState(null);
+      const [libSearch, setLibSearch] = React.useState('');
+
+      // Load data from Firestore
+      React.useEffect(() => {
+        const loadData = async () => {
+          try {
+            const doc = await db.collection('users').doc(user.uid).get();
+            if (doc.exists) {
+              const data = doc.data();
+              if (data.foods) setFoods(data.foods);
+              else setFoods(SEED_LIBRARY);
+              if (data.entries) setEntries(data.entries);
+              if (data.goals) setGoals(data.goals);
+              if (data.profile) setProfile(data.profile);
+            } else {
+              setFoods(SEED_LIBRARY);
+            }
+          } catch (e) {
+            setSaveError(true);
+            setFoods(SEED_LIBRARY);
+          }
+          setLoading(false);
+        };
+        loadData();
+      }, [user.uid]);
+
+      // Save to Firestore whenever data changes
+      React.useEffect(() => {
+        if (loading) return;
+        const saveData = async () => {
+          try {
+            await db.collection('users').doc(user.uid).set({
+              foods,
+              entries,
+              goals,
+              profile,
+            }, { merge: true });
+            setSaveError(false);
+          } catch (e) {
+            setSaveError(true);
+          }
+        };
+        saveData();
+      }, [foods, entries, goals, profile, user.uid, loading]);
+
+      const today = todayKey();
+      const todayEntries = entries.filter(e => e.date === today);
+      const totals = {};
+      for (const f of NUTRIENT_FIELDS) totals[f.key] = sumKey(todayEntries, f.key);
+      const calPct = goals.cal ? totals.cal / goals.cal : 0;
+
+      const removeEntry = id => setEntries(entries.filter(e => e.id !== id));
+      const addEntry = entry => setEntries([...entries, { ...entry, id: Date.now().toString(), date: today }]);
+      const deleteFood = id => setFoods(foods.filter(f => f.id !== id));
+
+      if (loading) return <div style={{padding:40,textAlign:'center',color:'#5a5048'}}>Loading your data…</div>;
+
+      return (
+        <div className="mt-root">
+          <style>{css}</style>
+
+          {tab === 'today' && (
+            <TodayView totals={totals} goals={goals} calPct={calPct} entries={todayEntries}
+              expandedEntry={expandedEntry} setExpandedEntry={setExpandedEntry}
+              removeEntry={removeEntry} saveError={saveError} />
+          )}
+          {tab === 'library' && (
+            <LibraryView foods={foods} setShowLibAdd={setShowLibAdd}
+              setShowServing={setShowServing} setEditingFood={setEditingFood}
+              deleteFood={deleteFood} libSearch={libSearch} setLibSearch={setLibSearch} />
+          )}
+          {tab === 'history' && <HistoryView entries={entries} goals={goals} />}
+          {tab === 'goals' && (
+            <GoalsView goals={goals} setGoals={setGoals} profile={profile} setProfile={setProfile} />
+          )}
+
+          {(tab === 'today' || tab === 'library') && (
+            <button className="mt-add-fab" onClick={() => tab === 'today' ? setShowAdd(true) : setShowLibAdd(true)}>
+              <Icons.Plus size={18} /> {tab === 'today' ? 'Log food' : 'New food'}
+            </button>
+          )}
+
+          <nav className="mt-nav">
+            <button className={`mt-nav-btn ${tab==='today'?'active':''}`} onClick={()=>setTab('today')}><Icons.Calendar size={20}/> Today</button>
+            <button className={`mt-nav-btn ${tab==='library'?'active':''}`} onClick={()=>setTab('library')}><Icons.Library size={20}/> Library</button>
+            <button className={`mt-nav-btn ${tab==='history'?'active':''}`} onClick={()=>setTab('history')}><Icons.Calendar size={20}/> History</button>
+            <button className={`mt-nav-btn ${tab==='goals'?'active':''}`} onClick={()=>setTab('goals')}><Icons.Target size={20}/> Goals</button>
+          </nav>
+
+          {/* Header with logout */}
+          <div className="mt-header" style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+            <div>
+              <h1 className="mt-title" style={{fontSize:22}}>{tab === 'today' ? 'Today' : tab === 'library' ? 'Library' : tab === 'history' ? 'History' : 'Goals'}</h1>
+              <p className="mt-sub">{user.email}</p>
+            </div>
+            <button className="mt-logout-btn" onClick={onLogout}>Logout</button>
+          </div>
+
+          {showAdd && (
+            <AddEntrySheet foods={foods} onClose={()=>setShowAdd(false)}
+              onAddEntry={(e)=>{addEntry(e);setShowAdd(false)}}
+              onPickFood={(f)=>{setShowServing(f);setShowAdd(false)}} />
+          )}
+          {showServing && (
+            <ServingSheet food={showServing} onClose={()=>setShowServing(null)}
+              onLog={(e)=>{addEntry(e);setShowServing(null)}} />
+          )}
+          {showLibAdd && (
+            <FoodEditorSheet onClose={()=>setShowLibAdd(false)}
+              onSave={(f)=>{setFoods([...foods,{...f,id:Date.now().toString()}]);setShowLibAdd(false)}} />
+          )}
+          {editingFood && (
+            <FoodEditorSheet existing={editingFood} onClose={()=>setEditingFood(null)}
+              onSave={(f)=>{setFoods(foods.map(x=>x.id===editingFood.id?{...x,...f}:x));setEditingFood(null)}} />
+          )}
+        </div>
+      );
+    };
+
+    // ---------- Sub-views (Today, Library, History, Goals, Sheets) ----------
+    const TodayView = ({ totals, goals, calPct, entries, expandedEntry, setExpandedEntry, removeEntry, saveError }) => {
+      const proteinPct = goals.protein ? Math.min(totals.protein / goals.protein, 1) : 0;
+      return (
+        <>
+          <div className="mt-ring-wrap">
+            <div className="mt-ring-box">
+              <div className="mt-ring-row">
+                <Ring pct={calPct} />
+                <div className="mt-ring-info">
+                  <div className="mt-ring-label">Calories</div>
+                  <div className="mt-ring-val">{fmtInt(totals.cal)}</div>
+                  <div className="mt-ring-goal">of {goals.cal || '—'}</div>
+                </div>
+              </div>
+              <div className="mt-ring-bar-row">
+                <div className="mt-ring-bar mt-bar-protein">
+                  <div className="mt-bar-label">Protein</div>
+                  <div className="mt-bar-val">{totals.protein}g <span style={{color:'var(--ink-mute)',fontWeight:400}}>/ {goals.protein || '—'}</span></div>
+                  <div className="mt-bar-track"><div className="mt-bar-fill" style={{width:`${proteinPct*100}%`}}/></div>
+                </div>
+                <div className="mt-ring-bar mt-bar-carbs">
+                  <div className="mt-bar-label">Carbs</div>
+                  <div className="mt-bar-val">{totals.carbs}g</div>
+                  <div className="mt-bar-track"><div className="mt-bar-fill" style={{width:'100%',opacity:0.6}}/></div>
+                </div>
+                <div className="mt-ring-bar mt-bar-fat">
+                  <div className="mt-bar-label">Fat</div>
+                  <div className="mt-bar-val">{totals.fat}g</div>
+                  <div className="mt-bar-track"><div className="mt-bar-fill" style={{width:'100%',opacity:0.6}}/></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <section className="mt-section">
+            {saveError && <div className="mt-notice">⚠️ Could not save to cloud. Your data might not sync.</div>}
+            <div className="mt-section-head">
+              <h2 className="mt-section-title">Logged</h2>
+              <span className="mt-section-count">{entries.length} {entries.length===1?'item':'items'}</span>
+            </div>
+            {entries.length===0 ? <div className="mt-empty">Nothing logged yet today.</div> : entries.map(e=>(
+              <div key={e.id} className="mt-entry">
+                <div className="mt-entry-head" onClick={()=>setExpandedEntry(expandedEntry===e.id?null:e.id)}>
+                  {expandedEntry===e.id ? <Icons.ChevronDown size={14} color="var(--ink-mute)"/> : <Icons.ChevronRight size={14} color="var(--ink-mute)"/>}
+                  <div className="mt-entry-info">
+                    <p className="mt-entry-name">{e.name}</p>
+                    <p className="mt-entry-meta">{e.servingNote} · {e.nutrients.protein != null ? `${e.nutrients.protein}g protein` : 'protein —'}</p>
+                  </div>
+                  <span className="mt-entry-cal">{fmtInt(e.nutrients.cal)}</span>
+                  <button className="mt-entry-x" onClick={ev=>{ev.stopPropagation();removeEntry(e.id)}}><Icons.X size={16}/></button>
+                </div>
+                {expandedEntry===e.id && (
+                  <div className="mt-entry-expand">
+                    {NUTRIENT_FIELDS.map(f=>(
+                      <div key={f.key} className="mt-entry-stat">
+                        <span className="mt-entry-stat-l">{f.label}</span>
+                        <span className="mt-entry-stat-v">{fmt(e.nutrients[f.key], f.unit)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </section>
+        </>
+      );
+    };
+
+    const LibraryView = ({ foods, setShowLibAdd, setShowServing, setEditingFood, deleteFood, libSearch, setLibSearch }) => {
+      const filtered = foods.filter(f=>f.name.toLowerCase().includes(libSearch.toLowerCase()));
+      return (
+        <section className="mt-section">
+          <div className="mt-search">
+            <Icons.Search className="mt-search-icon" size={16}/>
+            <input className="mt-search-input" placeholder="Search foods…" value={libSearch} onChange={e=>setLibSearch(e.target.value)}/>
+          </div>
+          {filtered.length===0 ? <div className="mt-empty">No matches.</div> : filtered.map(f=>(
+            <div key={f.id} className="mt-lib-item">
+              <div className="mt-lib-info" onClick={()=>setShowServing(f)}>
+                <p className="mt-lib-name">{f.name}</p>
+                <p className="mt-lib-meta">{f.servingDesc} · {fmtInt(f.cal)} cal · {fmt(f.protein,'g')} p</p>
+              </div>
+              <button className="mt-lib-edit" onClick={()=>setEditingFood(f)}><Icons.Edit2 size={14}/></button>
+              <button className="mt-lib-edit" onClick={()=>{if(confirm(`Delete ${f.name}?`))deleteFood(f.id)}}><Icons.Trash2 size={14}/></button>
+            </div>
+          ))}
+        </section>
+      );
+    };
+
+    const HistoryView = ({ entries, goals }) => {
+      const byDay = {};
+      for (const e of entries) { if (!byDay[e.date]) byDay[e.date] = []; byDay[e.date].push(e); }
+      const days = Object.keys(byDay).sort().reverse();
+      return (
+        <section className="mt-section">
+          {days.length===0 ? <div className="mt-empty">No history yet.</div> : days.map(d=>{
+            const dayEntries = byDay[d];
+            const cal = sumKey(dayEntries,'cal');
+            const protein = sumKey(dayEntries,'protein');
+            const date = new Date(d+'T12:00:00');
+            return (
+              <div key={d} className="mt-history-day">
+                <h3 className="mt-history-date">{date.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</h3>
+                <div className="mt-history-stats">
+                  <span>{fmtInt(cal)} cal{goals.cal?` / ${goals.cal}`:''}</span>
+                  <span>{protein}g protein{goals.protein?` / ${goals.protein}g`:''}</span>
+                  <span>{dayEntries.length} items</span>
+                </div>
+              </div>
+            );
+          })}
+        </section>
+      );
+    };
+
+    const GoalsView = ({ goals, setGoals, profile, setProfile }) => {
+      const isImperial = profile.units === 'imperial';
+      const bmr = calcBMR(profile);
+      const tdee = calcTDEE(bmr, profile.activity);
+      const deltaKg = profile.weightKg && profile.targetWeightKg ? profile.targetWeightKg - profile.weightKg : 0;
+      const direction = deltaKg < -0.1 ? 'cut' : deltaKg > 0.1 ? 'bulk' : 'maintain';
+      const proteinRecKg = profile.weightKg ? Math.round(profile.weightKg * 1.8) : null;
+      const setUnits = u => setProfile({...profile, units: u});
+      const setHeight = v => { const n=parseFloat(v); if(isNaN(n)) return; setProfile({...profile, heightCm: isImperial?inToCm(n):n}); };
+      const setWeight = v => { const n=parseFloat(v); if(isNaN(n)) return; setProfile({...profile, weightKg: isImperial?lbToKg(n):n}); };
+      const setTarget = v => { const n=parseFloat(v); if(isNaN(n)) return; setProfile({...profile, targetWeightKg: isImperial?lbToKg(n):n}); };
+      const displayHeight = isImperial ? Math.round(cmToIn(profile.heightCm)) : Math.round(profile.heightCm);
+      const displayWeight = isImperial ? Math.round(kgToLb(profile.weightKg)*10)/10 : Math.round(profile.weightKg*10)/10;
+      const displayTarget = isImperial ? Math.round(kgToLb(profile.targetWeightKg)*10)/10 : Math.round(profile.targetWeightKg*10)/10;
+      const paces = direction === 'cut' ? CUT_PACES : direction === 'bulk' ? BULK_PACES : [];
+      const totalLbToChange = Math.abs(kgToLb(deltaKg));
+      const apply = (pace) => { const targetCal = direction==='cut' ? tdee-pace.deficit : tdee+pace.surplus; setGoals({cal:Math.round(targetCal), protein: proteinRecKg||goals.protein}); };
+
+      return (
+        <section className="mt-section">
+          <div className="mt-goal-card">
+            <h3 className="mt-goal-card-title">About you</h3>
+            <div className="mt-unit-toggle">
+              <button className={!isImperial?'active':''} onClick={()=>setUnits('metric')}>Metric</button>
+              <button className={isImperial?'active':''} onClick={()=>setUnits('imperial')}>Imperial</button>
+            </div>
+            <div className="mt-field">
+              <label className="mt-field-label">Sex</label>
+              <select className="mt-select" value={profile.sex} onChange={e=>setProfile({...profile,sex:e.target.value})}>
+                <option value="male">Male</option><option value="female">Female</option>
+              </select>
+            </div>
+            <div className="mt-input-row">
+              <div className="mt-field"><label className="mt-field-label">Age</label><input className="mt-input" type="number" value={profile.age||''} onChange={e=>setProfile({...profile,age:parseInt(e.target.value)||0})}/></div>
+              <div className="mt-field"><label className="mt-field-label">Height ({isImperial?'in':'cm'})</label><input className="mt-input" type="number" value={displayHeight} onChange={e=>setHeight(e.target.value)}/></div>
+            </div>
+            <div className="mt-input-row">
+              <div className="mt-field"><label className="mt-field-label">Weight ({isImperial?'lb':'kg'})</label><input className="mt-input" type="number" step="0.1" value={displayWeight} onChange={e=>setWeight(e.target.value)}/></div>
+              <div className="mt-field"><label className="mt-field-label">Target weight ({isImperial?'lb':'kg'})</label><input className="mt-input" type="number" step="0.1" value={displayTarget} onChange={e=>setTarget(e.target.value)}/></div>
+            </div>
+            <div className="mt-field">
+              <label className="mt-field-label">Activity level</label>
+              <select className="mt-select" value={profile.activity} onChange={e=>setProfile({...profile,activity:e.target.value})}>
+                {ACTIVITY_LEVELS.map(a=><option key={a.key} value={a.key}>{a.label} — {a.desc}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="mt-goal-card">
+            <h3 className="mt-goal-card-title">Calculated</h3>
+            <div className="mt-goal-stat"><span className="mt-goal-stat-l">BMR</span><span className="mt-goal-stat-v">{bmr?Math.round(bmr)+' cal':'—'}</span></div>
+            <div className="mt-goal-stat"><span className="mt-goal-stat-l">TDEE</span><span className="mt-goal-stat-v">{tdee?tdee+' cal':'—'}</span></div>
+            <div className="mt-goal-stat"><span className="mt-goal-stat-l">Protein target (1.8g/kg)</span><span className="mt-goal-stat-v">{proteinRecKg?proteinRecKg+'g':'—'}</span></div>
+          </div>
+          {direction!=='maintain' && tdee && (
+            <div className="mt-goal-card">
+              <h3 className="mt-goal-card-title">{direction==='cut'?'Cutting paces':'Bulking paces'}</h3>
+              <div className="mt-goal-callout">You want to {direction==='cut'?'lose':'gain'} {totalLbToChange.toFixed(1)}lb ({Math.abs(deltaKg).toFixed(1)}kg).</div>
+              {paces.map(p=>{ const dailyCal=direction==='cut'?tdee-p.deficit:tdee+p.surplus; const weeks=Math.round(totalLbToChange/p.perWeekLb); return (
+                <div key={p.key} className="mt-pace">
+                  <div className="mt-pace-head"><span className="mt-pace-label">{p.label}</span><span className="mt-pace-rate">{p.perWeekLb}lb/wk</span></div>
+                  <div className="mt-pace-desc">{p.desc}</div>
+                  <div className="mt-pace-stats">
+                    <div><div className="mt-pace-stat-l">Daily calories</div><div className="mt-pace-stat-v">{Math.round(dailyCal)}</div></div>
+                    <div><div className="mt-pace-stat-l">Est. weeks to goal</div><div className="mt-pace-stat-v">~{weeks}</div></div>
+                  </div>
+                  <button className="mt-pace-apply" onClick={()=>apply(p)}><Icons.Check size={12} style={{verticalAlign:'middle',marginRight:4}}/>Apply</button>
+                </div>
+              )})}
+            </div>
+          )}
+          <div className="mt-goal-card">
+            <h3 className="mt-goal-card-title">Manual override</h3>
+            <div className="mt-field"><label className="mt-field-label">Daily calories</label><input className="mt-input" type="number" value={goals.cal||''} onChange={e=>setGoals({...goals,cal:parseOpt(e.target.value)})}/></div>
+            <div className="mt-field"><label className="mt-field-label">Daily protein (g)</label><input className="mt-input" type="number" value={goals.protein||''} onChange={e=>setGoals({...goals,protein:parseOpt(e.target.value)})}/></div>
+          </div>
+        </section>
+      );
+    };
+
+    const AddEntrySheet = ({ foods, onClose, onAddEntry, onPickFood }) => {
+      const [mode, setMode] = React.useState('library');
+      const [search, setSearch] = React.useState('');
+      const [showAdvanced, setShowAdvanced] = React.useState(false);
+      const [name, setName] = React.useState('');
+      const [servingNote, setServingNote] = React.useState('1 serving');
+      const [vals, setVals] = React.useState({});
+      const filtered = foods.filter(f=>f.name.toLowerCase().includes(search.toLowerCase()));
+      const submit = () => { if(!name.trim()) return; const nutrients={}; for(const f of NUTRIENT_FIELDS) nutrients[f.key]=parseOpt(vals[f.key]); if(nutrients.cal==null) nutrients.cal=0; onAddEntry({name:name.trim(), servingNote:servingNote||'1 serving', nutrients}); };
+      return (
+        <div className="mt-sheet-bg" onClick={onClose}><div className="mt-sheet" onClick={e=>e.stopPropagation()}>
+          <div className="mt-sheet-head"><h2 className="mt-sheet-title">Log food</h2><button className="mt-sheet-x" onClick={onClose}><Icons.X size={20}/></button></div>
+          <div className="mt-unit-toggle" style={{display:'flex',marginBottom:14}}>
+            <button className={mode==='library'?'active':''} onClick={()=>setMode('library')} style={{flex:1}}>From library</button>
+            <button className={mode==='manual'?'active':''} onClick={()=>setMode('manual')} style={{flex:1}}>Quick entry</button>
+          </div>
+          {mode==='library' && (<>
+            <div className="mt-search"><Icons.Search className="mt-search-icon" size={16}/><input className="mt-search-input" placeholder="Search…" value={search} onChange={e=>setSearch(e.target.value)}/></div>
+            <div style={{maxHeight:'50vh',overflowY:'auto'}}>
+              {filtered.length===0?<div className="mt-empty">No matches.</div>:filtered.map(f=>(
+                <div key={f.id} className="mt-lib-item" onClick={()=>onPickFood(f)} style={{cursor:'pointer'}}>
+                  <div className="mt-lib-info"><p className="mt-lib-name">{f.name}</p><p className="mt-lib-meta">{f.servingDesc} · {fmtInt(f.cal)} cal</p></div>
+                  <Icons.ChevronRight size={16} color="var(--ink-mute)"/>
+                </div>))}
+            </div>
+          </>)}
+          {mode==='manual' && (<>
+            <div className="mt-field"><label className="mt-field-label">Food name</label><input className="mt-input" value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Mom's lasagna"/></div>
+            <div className="mt-field"><label className="mt-field-label">Serving note</label><input className="mt-input" value={servingNote} onChange={e=>setServingNote(e.target.value)} placeholder="e.g. 1 plate, 200g"/></div>
+            <div className="mt-field-label">Macros</div>
+            <div className="mt-input-row">
+              {NUTRIENT_FIELDS.slice(0,2).map(f=><div className="mt-field" key={f.key}><label className="mt-field-label">{f.label}{f.unit&&` (${f.unit})`}</label><input className="mt-input" type="number" inputMode="decimal" value={vals[f.key]||''} onChange={e=>setVals({...vals,[f.key]:e.target.value})}/></div>)}
+            </div>
+            <div className="mt-input-row">
+              {NUTRIENT_FIELDS.slice(2,4).map(f=><div className="mt-field" key={f.key}><label className="mt-field-label">{f.label}{f.unit&&` (${f.unit})`}</label><input className="mt-input" type="number" inputMode="decimal" value={vals[f.key]||''} onChange={e=>setVals({...vals,[f.key]:e.target.value})}/></div>)}
+            </div>
+            <button className="mt-btn-ghost" onClick={()=>setShowAdvanced(!showAdvanced)}>{showAdvanced?<Icons.ChevronDown size={14}/>:<Icons.ChevronRight size={14}/>}{showAdvanced?'Hide':'Show'} other nutrients</button>
+            {showAdvanced && (<>
+              <div className="mt-input-row">{NUTRIENT_FIELDS.slice(4,6).map(f=><div className="mt-field" key={f.key}><label className="mt-field-label">{f.label}{f.unit&&` (${f.unit})`}</label><input className="mt-input" type="number" inputMode="decimal" value={vals[f.key]||''} onChange={e=>setVals({...vals,[f.key]:e.target.value})}/></div>)}</div>
+              <div className="mt-input-row">{NUTRIENT_FIELDS.slice(6,8).map(f=><div className="mt-field" key={f.key}><label className="mt-field-label">{f.label}{f.unit&&` (${f.unit})`}</label><input className="mt-input" type="number" inputMode="decimal" value={vals[f.key]||''} onChange={e=>setVals({...vals,[f.key]:e.target.value})}/></div>)}</div>
+              <div className="mt-input-row">{NUTRIENT_FIELDS.slice(8,10).map(f=><div className="mt-field" key={f.key}><label className="mt-field-label">{f.label}{f.unit&&` (${f.unit})`}</label><input className="mt-input" type="number" inputMode="decimal" value={vals[f.key]||''} onChange={e=>setVals({...vals,[f.key]:e.target.value})}/></div>)}</div>
+            </>)}
+            <button className="mt-btn-primary" onClick={submit} disabled={!name.trim()}>Log it</button>
+          </>)}
+        </div></div>
+      );
+    };
+
+    const ServingSheet = ({ food, onClose, onLog }) => {
+      const [byGrams, setByGrams] = React.useState(false);
+      const [servings, setServings] = React.useState(1);
+      const [grams, setGrams] = React.useState(food.servingG);
+      const mult = byGrams ? grams / food.servingG : servings;
+      const scaled = scale(food, mult);
+      const log = () => { const note = byGrams ? `${grams}g` : `${servings} × ${food.servingDesc}`; onLog({name:food.name, servingNote:note, nutrients:scaled}); };
+      return (
+        <div className="mt-sheet-bg" onClick={onClose}><div className="mt-sheet" onClick={e=>e.stopPropagation()}>
+          <div className="mt-sheet-head"><h2 className="mt-sheet-title">{food.name}</h2><button className="mt-sheet-x" onClick={onClose}><Icons.X size={20}/></button></div>
+          <div className="mt-notice">Base: {food.servingDesc} ({food.servingG}g)</div>
+          <div className="mt-unit-toggle" style={{display:'flex',marginBottom:14}}>
+            <button className={!byGrams?'active':''} onClick={()=>setByGrams(false)} style={{flex:1}}>Servings</button>
+            <button className={byGrams?'active':''} onClick={()=>setByGrams(true)} style={{flex:1}}>Grams</button>
+          </div>
+          <div className="mt-field">
+            {byGrams ? (<><label className="mt-field-label">Amount in grams</label><input className="mt-input" type="number" step="1" value={grams} onChange={e=>setGrams(parseFloat(e.target.value)||0)}/></>)
+            : (<><label className="mt-field-label">Number of servings</label><input className="mt-input" type="number" step="0.25" value={servings} onChange={e=>setServings(parseFloat(e.target.value)||0)}/></>)}
+          </div>
+          <div className="mt-goal-card" style={{margin:'14px 0'}}>
+            {NUTRIENT_FIELDS.map(f=><div key={f.key} className="mt-goal-stat"><span className="mt-goal-stat-l">{f.label}</span><span className="mt-goal-stat-v">{fmt(scaled[f.key], f.unit)}</span></div>)}
+          </div>
+          <button className="mt-btn-primary" onClick={log} disabled={mult<=0}>Log it</button>
+        </div></div>
+      );
+    };
+
+    const FoodEditorSheet = ({ existing, onClose, onSave }) => {
+      const [name, setName] = React.useState(existing?.name||'');
+      const [servingDesc, setServingDesc] = React.useState(existing?.servingDesc||'100g');
+      const [servingG, setServingG] = React.useState(existing?.servingG||100);
+      const [vals, setVals] = React.useState(()=>{ const v={}; for(const f of NUTRIENT_FIELDS){ const x=existing?.[f.key]; v[f.key]=x==null?'':String(x); } return v; });
+      const [showAdvanced, setShowAdvanced] = React.useState(false);
+      const save = () => { if(!name.trim()) return; const obj={name:name.trim(), servingDesc:servingDesc||'1 serving', servingG:parseFloat(servingG)||100}; for(const f of NUTRIENT_FIELDS) obj[f.key]=parseOpt(vals[f.key]); if(obj.cal==null) obj.cal=0; onSave(obj); };
+      return (
+        <div className="mt-sheet-bg" onClick={onClose}><div className="mt-sheet" onClick={e=>e.stopPropagation()}>
+          <div className="mt-sheet-head"><h2 className="mt-sheet-title">{existing?'Edit food':'New food'}</h2><button className="mt-sheet-x" onClick={onClose}><Icons.X size={20}/></button></div>
+          <div className="mt-field"><label className="mt-field-label">Name</label><input className="mt-input" value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Greek yogurt"/></div>
+          <div className="mt-input-row">
+            <div className="mt-field"><label className="mt-field-label">Serving description</label><input className="mt-input" value={servingDesc} onChange={e=>setServingDesc(e.target.value)}/></div>
+            <div className="mt-field"><label className="mt-field-label">Serving grams</label><input className="mt-input" type="number" value={servingG} onChange={e=>setServingG(e.target.value)}/></div>
+          </div>
+          <div className="mt-field-label">Per serving</div>
+          <div className="mt-input-row">
+            {NUTRIENT_FIELDS.slice(0,2).map(f=><div className="mt-field" key={f.key}><label className="mt-field-label">{f.label}{f.unit&&` (${f.unit})`}</label><input className="mt-input" type="number" inputMode="decimal" value={vals[f.key]} onChange={e=>setVals({...vals,[f.key]:e.target.value})}/></div>)}
+          </div>
+          <div className="mt-input-row">
+            {NUTRIENT_FIELDS.slice(2,4).map(f=><div className="mt-field" key={f.key}><label className="mt-field-label">{f.label}{f.unit&&` (${f.unit})`}</label><input className="mt-input" type="number" inputMode="decimal" value={vals[f.key]} onChange={e=>setVals({...vals,[f.key]:e.target.value})}/></div>)}
+          </div>
+          <button className="mt-btn-ghost" onClick={()=>setShowAdvanced(!showAdvanced)}>{showAdvanced?<Icons.ChevronDown size={14}/>:<Icons.ChevronRight size={14}/>}{showAdvanced?'Hide':'Show'} other nutrients</button>
+          {showAdvanced && NUTRIENT_FIELDS.slice(4).reduce((acc,f,i,arr)=>{if(i%2===0){acc.push(<div className="mt-input-row" key={i}><div className="mt-field"><label className="mt-field-label">{f.label}{f.unit&&` (${f.unit})`}</label><input className="mt-input" type="number" inputMode="decimal" value={vals[f.key]} onChange={e=>setVals({...vals,[f.key]:e.target.value})}/></div>{arr[i+1]&&<div className="mt-field"><label className="mt-field-label">{arr[i+1].label}{arr[i+1].unit&&` (${arr[i+1].unit})`}</label><input className="mt-input" type="number" inputMode="decimal" value={vals[arr[i+1].key]} onChange={e=>setVals({...vals,[arr[i+1].key]:e.target.value})}/></div>}</div>);}return acc;},[])}
+          <button className="mt-btn-primary" onClick={save} disabled={!name.trim()}>Save</button>
+        </div></div>
+      );
+    };
+
+    // ---------- Top-level App with Auth ----------
+    const App = () => {
+      const [user, setUser] = React.useState(auth.currentUser);
+      const [loading, setLoading] = React.useState(true);
+      React.useEffect(()=>{const unsub=auth.onAuthStateChanged(u=>{setUser(u);setLoading(false);});return ()=>unsub();},[]);
+      if (loading) return <div style={{padding:40,textAlign:'center',color:'#5a5048'}}>Loading…</div>;
+      if (!user) return <LoginScreen onLogin={(u)=>setUser(u)}/>;
+      return <MainApp user={user} onLogout={()=>auth.signOut()}/>;
+    };
+
+    ReactDOM.render(<App/>, document.getElementById('root'));
+  </script>
+</body>
+</html>
