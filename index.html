@@ -5,22 +5,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Macro Tracker</title>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <style>
-    body { margin: 0; padding: 0; background: var(--cream); display: flex; justify-content: center; }
-    #root { width: 100%; max-width: 480px; }
+<style>
+    /* 1. Define the base (light) theme first */
+    :root {
+      --cream: #f8f9fa;       /* Clean, light neutral background */
+      --cream-2: #e9ecef;     /* Slightly darker neutral for accents */
+      --ink: #212529;         /* Dark text */
+      --ink-soft: #495057;
+      --ink-mute: #adb5bd;
+      --green: #2b8a3e;       /* Fresh green */
+      --green-soft: #40c057;
+      --terra: #e03131;       /* Clean accent */
+      --terra-soft: #ff6b6b;
+      --line: #dee2e6;        /* Subtle borders */
+      --card: #ffffff;        /* Pure white cards */
+      transition: background 0.3s, color 0.3s;
+    }
+
+    /* 2. Define the dark theme overrides below it */
     [data-theme="dark"] {
-      --cream: #1a1a1a;
-      --cream-2: #2a2a2a;
+      --cream: #121212;
+      --cream-2: #1e1e1e;
       --ink: #e0e0e0;
       --ink-soft: #b0b0b0;
-      --ink-mute: #777;
-      --green: #6a9a5b;
-      --green-soft: #4e7a40;
-      --terra: #d4856b;
-      --terra-soft: #b5654f;
-      --line: #333;
-      --card: #222;
+      --ink-mute: #777777;
+      --green: #51cf66;
+      --green-soft: #40c057;
+      --terra: #ff8787;
+      --terra-soft: #ffa8a8;
+      --line: #333333;
+      --card: #1e1e1e;
     }
+
+    /* 3. Base styles */
+    body { 
+      margin: 0; 
+      padding: 0; 
+      background: var(--cream); 
+      color: var(--ink); 
+      display: flex; 
+      justify-content: center; 
+    }
+    #root { width: 100%; max-width: 480px; }
   </style>
 </head>
 <body>
@@ -183,11 +209,6 @@
 
     // ---------- Styles ----------
     const css = `
-:root {
-  --cream: #f7f1e6; --cream-2: #f0e7d4; --ink: #2a2520; --ink-soft: #5a5048; --ink-mute: #8a7f73;
-  --green: #4a6b3a; --green-soft: #7a9968; --terra: #c66b3d; --terra-soft: #e89571; --line: #d8ccb6; --card: #fffaf0;
-  transition: background 0.3s, color 0.3s;
-}
 .mt-root { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; max-width: 480px; margin: 0 auto; padding-bottom: 90px; position: relative; }
 .mt-header { padding: 24px 20px 8px; }
 .mt-title { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 600; letter-spacing: -0.5px; margin: 0; }
